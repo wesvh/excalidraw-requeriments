@@ -57,6 +57,41 @@
     }
   }
 
+  .ToolIcon__icon_text {
+    box-sizing: border-box;
+    width: 100%;
+    height: var(--default-button-size);
+    color: var(--icon-fill-color);
+
+    display: flex;
+    justify-content: left;
+    align-items: center;
+
+    border-radius: var(--border-radius-lg);
+
+    & + .ToolIcon__label {
+      margin-inline-start: 0;
+    }
+
+    svg {
+      position: relative;
+      width: var(--default-icon-size);
+      height: var(--default-icon-size);
+      color: var(--icon-fill-color);
+
+      padding-right: 10px;
+      margin-left: 6px;
+    }
+
+    .icon_text {
+      padding-right: 10px;
+    }
+
+    &:hover {
+      background-color: var(--button-hover-bg);
+    }
+  }
+
   .ToolIcon__label {
     display: flex;
     align-items: center;
