@@ -1810,7 +1810,7 @@ class App extends React.Component<AppProps, AppState> {
 
     this.updateMagicGeneration({
       frameElement,
-      data: { status: "done", html },
+      data: { status: "done", html, react: false },
     });
   }
 
@@ -1937,7 +1937,7 @@ class App extends React.Component<AppProps, AppState> {
     // iframe 요소에 샌드박스 URL을 설정하여 페이지에 임베드합니다.
     this.updateMagicGeneration({
       frameElement,
-      data: { status: "done", html: iframeHtml },
+      data: { status: "done", html: iframeHtml, react: false },
     });
 
     // 기존 방식

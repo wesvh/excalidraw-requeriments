@@ -6,7 +6,7 @@ export type MagicCacheData =
   | {
       status: "pending";
     }
-  | { status: "done"; html: string }
+  | { status: "done"; html: string; react: boolean }
   | {
       status: "error";
       message?: string;
