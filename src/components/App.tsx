@@ -399,6 +399,7 @@ import { MagicIcon, copyIcon, fullscreenIcon } from "./icons";
 import { EditorLocalStorage } from "../data/EditorLocalStorage";
 import {
   uploadHtmlToCodeSandbox,
+  uploadReactCodeToCodeSandbox,
 } from "../data/codesandboxEmbed";
 import { htmlToReactComponent } from "../data/htmlToReact";
 
