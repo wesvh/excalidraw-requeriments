@@ -400,6 +400,7 @@ import { EditorLocalStorage } from "../data/EditorLocalStorage";
 import {
   uploadHtmlToCodeSandbox,
 } from "../data/codesandboxEmbed";
+import { htmlToReactComponent } from "../data/htmlToReact";
 
 const AppContext = React.createContext<AppClassProperties>(null!);
 const AppPropsContext = React.createContext<AppProps>(null!);
@@ -1944,6 +1945,175 @@ class App extends React.Component<AppProps, AppState> {
     //   frameElementn,
     //   data: { status: "done", html },
     // });
+  }
+
+  private async onMagicFrameReactComponentGenerate(
+    magicFrame: ExcalidrawMagicFrameElement,
+    source: "button" | "upstream",
+  ) {
+    if (!this.OPENAI_KEY) {
+      this.setState({
+        openDialog: {
+          name: "settings",
+          tab: "diagram-to-code",
+          source: "generation",
+        },
+      });
+      trackEvent("ai", "generate (missing key)", "d2c");
+      return;
+    }
+
+    const magicFrameChildren = elementsOverlappingBBox({
+      elements: this.scene.getNonDeletedElements(),
+      bounds: magicFrame,
+      type: "overlap",
+    }).filter((el) => !isMagicFrameElement(el));
+
+    if (!magicFrameChildren.length) {
+      if (source === "button") {
+        this.setState({ errorMessage: "Cannot generate from an empty frame" });
+        trackEvent("ai", "generate (no-children)", "d2c");
+      } else {
+        this.setActiveTool({ type: "magicframe" });
+      }
+      return;
+    }
+
+    const frameElement = this.insertIframeElement({
+      sceneX: magicFrame.x + magicFrame.width + 30,
+      sceneY: magicFrame.y,
+      width: magicFrame.width,
+      height: magicFrame.height,
+    });
+
+    if (!frameElement) {
+      return;
+    }
+
+    this.updateMagicGeneration({
+      frameElement,
+      data: { status: "pending" },
+    });
+
+    this.setState({
+      selectedElementIds: { [frameElement.id]: true },
+    });
+
+    const blob = await exportToBlob({
+      elements: this.scene.getNonDeletedElements(),
+      appState: {
+        ...this.state,
+        exportBackground: true,
+        viewBackgroundColor: this.state.viewBackgroundColor,
+      },
+      exportingFrame: magicFrame,
+      files: this.files,
+    });
+
+    const dataURL = await getDataURL(blob);
+
+    const textFromFrameChildren = this.getTextFromElements(magicFrameChildren);
+
+    trackEvent("ai", "generate (start)", "d2c");
+
+    const result = await diagramToHTML({
+      image: dataURL,
+      apiKey: this.OPENAI_KEY,
+      text: textFromFrameChildren,
+      theme: this.state.theme,
+    });
+    console.log(result);
+
+    if (!result.ok) {
+      trackEvent("ai", "generate (failed)", "d2c");
+      console.error(result.error);
+      this.updateMagicGeneration({
+        frameElement,
+        data: {
+          status: "error",
+          code: "ERR_OAI",
+          message: result.error?.message || "Unknown error during generation",
+        },
+      });
+      return;
+    }
+    trackEvent("ai", "generate (success)", "d2c");
+
+    if (result.choices[0].message.content == null) {
+      this.updateMagicGeneration({
+        frameElement,
+        data: {
+          status: "error",
+          code: "ERR_OAI",
+          message: "Nothing genereated :(",
+        },
+      });
+      return;
+    }
+
+    const message = result.choices[0].message.content;
+
+    const html = message.slice(
+      message.indexOf("<!DOCTYPE html>"),
+      message.indexOf("</html>") + "</html>".length,
+    );
+
+    trackEvent("ai", "react component generate (start)", "d2c");
+
+    const reactComponent = await htmlToReactComponent({
+      apiKey: this.OPENAI_KEY,
+      text: html,
+    });
+    console.log("react component: ", reactComponent);
+
+    if (!reactComponent.ok) {
+      trackEvent("ai", "react component generate (failed)", "d2c");
+      console.error(reactComponent.error);
+      this.updateMagicGeneration({
+        frameElement,
+        data: {
+          status: "error",
+          code: "ERR_OAI",
+          message:
+            reactComponent.error?.message || "Unknown error during generation",
+        },
+      });
+      return;
+    }
+
+    if (reactComponent.choices[0].message.content == null) {
+      this.updateMagicGeneration({
+        frameElement,
+        data: {
+          status: "error",
+          code: "ERR_OAI",
+          message: "Nothing genereated :(",
+        },
+      });
+      return;
+    }
+
+    const CodesandboxFiles = JSON.parse(
+      reactComponent.choices[0].message.content,
+    );
+
+    // HTML을 CodeSandbox에 업로드하고, iframe URL을 받아옵니다.
+    const sandboxIframeUrl = await uploadReactCodeToCodeSandbox(
+      CodesandboxFiles,
+    );
+
+    const iframeHtml = `<iframe
+                          src=${sandboxIframeUrl}
+                          style="width:100%; height:100vh; border:0; border-radius: 4px; overflow:hidden;"
+                          allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+                          sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+                        ></iframe>`;
+
+    // iframe 요소에 샌드박스 URL을 설정하여 페이지에 임베드합니다.
+    this.updateMagicGeneration({
+      frameElement,
+      data: { status: "done", html: iframeHtml, react: true },
+    });
   }
 
   private onIframeSrcCopy(element: ExcalidrawIframeElement) {
