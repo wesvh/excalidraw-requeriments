@@ -402,6 +402,7 @@ import {
   uploadReactCodeToCodeSandbox,
 } from "../data/codesandboxEmbed";
 import { htmlToReactComponent } from "../data/htmlToReact";
+import { ElementCanvasButtonWithText } from "./MagicButtonWithText";
 
 const AppContext = React.createContext<AppClassProperties>(null!);
 const AppPropsContext = React.createContext<AppProps>(null!);
@@ -1461,12 +1462,37 @@ class App extends React.Component<AppProps, AppState> {
                             <ElementCanvasButtons
                               element={firstSelectedElement}
                             >
-                              <ElementCanvasButton
+                              <ElementCanvasButtonWithText
                                 title={t("labels.convertToCode")}
+                                text="HTML"
                                 icon={MagicIcon}
                                 checked={false}
                                 onChange={() =>
                                   this.onMagicFrameGenerate(
+                                    firstSelectedElement,
+                                    "button",
+                                  )
+                                }
+                              />
+                              <ElementCanvasButtonWithText
+                                title={"labels.convertToSandboxCode"}
+                                text="Codesandbox"
+                                icon={MagicIcon}
+                                checked={false}
+                                onChange={() =>
+                                  this.onMagicFrameSandboxGenerate(
+                                    firstSelectedElement,
+                                    "button",
+                                  )
+                                }
+                              />
+                              <ElementCanvasButtonWithText
+                                title={"labels.convertToReactCode"}
+                                text="React"
+                                icon={MagicIcon}
+                                checked={false}
+                                onChange={() =>
+                                  this.onMagicFrameReactComponentGenerate(
                                     firstSelectedElement,
                                     "button",
                                   )
@@ -1489,6 +1515,20 @@ class App extends React.Component<AppProps, AppState> {
                                   this.onIframeSrcCopy(firstSelectedElement)
                                 }
                               />
+                              {firstSelectedElement.customData.generationData
+                                .react === false && (
+                                <ElementCanvasButtonWithText
+                                  title={t("labels.copySource")}
+                                  text="React"
+                                  icon={copyIcon}
+                                  checked={false}
+                                  onChange={() =>
+                                    this.onIframeConvertToReactCode(
+                                      firstSelectedElement,
+                                    )
+                                  }
+                                />
+                              )}
                               <ElementCanvasButton
                                 title="Enter fullscreen"
                                 icon={fullscreenIcon}
