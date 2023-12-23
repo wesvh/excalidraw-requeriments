@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { MagicIcon } from "../icons";
-import "./chatbot.scss";
+import "./Chatbot.scss";
 
 interface ChatbotProps {
   onChatbotSubmit: (message: string) => void;
