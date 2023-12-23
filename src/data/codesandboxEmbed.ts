@@ -17,7 +17,6 @@ export async function uploadHtmlToCodeSandbox(html: string) {
       body: JSON.stringify({ files }),
     },
   );
-  console.log(response);
   const data = await response.json();
 
   // 샌드박스 ID를 사용하여 iframe URL을 생성
@@ -56,12 +55,10 @@ export async function uploadReactCodeToCodeSandbox(CodesandboxFiles: JSON) {
     ...CodesandboxFiles,
     "package.json": {
       content: {
-        dependencies: dependencies,
+        dependencies,
       },
     },
   };
-
-  console.log(files);
 
   // POST 요청으로 샌드박스 생성
   const response = await fetch(
@@ -74,7 +71,6 @@ export async function uploadReactCodeToCodeSandbox(CodesandboxFiles: JSON) {
       body: JSON.stringify({ files }),
     },
   );
-  console.log(response);
   const data = await response.json();
 
   // 샌드박스 ID를 사용하여 iframe URL을 생성

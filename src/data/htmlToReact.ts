@@ -1,16 +1,5 @@
 import { OpenAIInput, OpenAIOutput } from "./ai/types";
 
-export type MagicSandboxData =
-  | {
-      status: "pending";
-    }
-  | { status: "done"; snadboxIframe: string }
-  | {
-      status: "error";
-      message?: string;
-      code: "ERR_GENERATION_INTERRUPTED" | string;
-    };
-
 const SYSTEM_PROMPT = `
 당신은 사용자의 HTML을 React 컴포넌트로 변환하는 숙련된 프론트엔드 개발자이며, CSS 그리드 및 플렉스 디자인에 능숙한 전문가입니다.
 당신의 역할은 사용자가 제공한 프론트엔드 HTML 코드를 React 컴포넌트로 변환하는 것입니다.
