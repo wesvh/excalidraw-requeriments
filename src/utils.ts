@@ -455,6 +455,13 @@ export const sceneCoordsToViewportCoords = (
   return { x, y };
 };
 
+export const sceneWidthtoViewportWidth = (
+  sceneWidth: number,
+  { zoom }: { zoom: Zoom },
+): number => {
+  return sceneWidth * zoom.value;
+};
+
 export const getGlobalCSSVariable = (name: string) =>
   getComputedStyle(document.documentElement).getPropertyValue(`--${name}`);
 

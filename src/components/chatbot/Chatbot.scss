@@ -1,0 +1,80 @@
+.excalidraw {
+  #chatbot {
+    border-radius: 8px;
+    overflow: hidden;
+
+    div {
+      padding: 5px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .chat_form {
+      display: flex;
+      align-items: stretch;
+      padding: 7px;
+
+      .chat_input {
+        background: #f8f8f8;
+        color: #121212;
+        flex: 1;
+        padding: 8px;
+        height: auto;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        margin-right: 8px;
+      }
+
+      .chat_button {
+        padding: 5px 12px;
+        background-color: var(--color-primary);
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+
+        &:hover {
+          background-color: var(--color-primary-darker);
+        }
+
+        .icon {
+          color: #fff;
+
+          display: flex;
+          justify-content: center;
+          align-items: center;
+
+          & + .ToolIcon__label {
+            margin-inline-start: 0;
+          }
+
+          svg {
+            position: relative;
+            width: var(--default-icon-size);
+            height: var(--default-icon-size);
+          }
+        }
+      }
+    }
+  }
+
+  &.theme--dark {
+    #chatbot {
+      color: #fff;
+
+      .chat_form {
+        .chat_input {
+          color: #fff;
+          border: 1px solid var(--border-color);
+          background: var(--input-bg-color);
+        }
+        .chat_button {
+          color: #121212;
+          .icon {
+            color: #121212;
+          }
+        }
+      }
+    }
+  }
+}
