@@ -6,7 +6,13 @@ export type MagicCacheData =
   | {
       status: "pending";
     }
-  | { status: "done"; html: string }
+  | {
+      status: "done";
+      html: string;
+      language: "react" | "svelte" | "html";
+      code: string;
+      toggleChat?: boolean;
+    }
   | {
       status: "error";
       message?: string;

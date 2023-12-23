@@ -394,9 +394,18 @@ import { ElementCanvasButtons } from "../element/ElementCanvasButtons";
 import { MagicCacheData, diagramToHTML } from "../data/magic";
 import { elementsOverlappingBBox, exportToBlob } from "../packages/utils";
 import { COLOR_PALETTE } from "../colors";
-import { ElementCanvasButton } from "./MagicButton";
-import { MagicIcon, copyIcon, fullscreenIcon } from "./icons";
+import { MagicIcon, chatIcon, copyIcon, fullscreenIcon } from "./icons";
 import { EditorLocalStorage } from "../data/EditorLocalStorage";
+import {
+  uploadHtmlToCodeSandbox,
+  uploadReactCodeToCodeSandbox,
+} from "../data/codesandboxEmbed";
+import { htmlToReactComponent } from "../data/htmlToReact";
+import { ElementCanvasButtonWithText } from "./MagicButtonWithText";
+import Chatbot from "./chatbot/Chatbot";
+import { chatToHtmlComponent } from "../data/chatToHtml";
+import { chatToReactComponent } from "../data/chatToReact";
+import { ElementCanvasChatbot } from "../element/ElementCanvasChatbot";
 
 const AppContext = React.createContext<AppClassProperties>(null!);
 const AppPropsContext = React.createContext<AppProps>(null!);
@@ -1022,8 +1031,6 @@ class App extends React.Component<AppProps, AppState> {
             src = getEmbedLink(toValidURL(el.link || ""));
           }
 
-          // console.log({ src });
-
           const isVisible = isElementInViewport(
             el,
             normalizedWidth,
@@ -1177,6 +1184,21 @@ class App extends React.Component<AppProps, AppState> {
      * @private
      */
     _cache: new Map(),
+  };
+
+  private toggleChatbot = (element: ExcalidrawIframeElement) => {
+    const frameElement = element;
+
+    if (element.customData?.generationData?.status === "done") {
+      const data = element.customData?.generationData;
+      const toggleChatStatus = !data.toggleChat;
+      data.toggleChat = toggleChatStatus;
+
+      this.updateMagicGeneration({
+        frameElement,
+        data,
+      });
+    }
   };
 
   private renderFrameNames = () => {
@@ -1456,12 +1478,37 @@ class App extends React.Component<AppProps, AppState> {
                             <ElementCanvasButtons
                               element={firstSelectedElement}
                             >
-                              <ElementCanvasButton
+                              <ElementCanvasButtonWithText
                                 title={t("labels.convertToCode")}
+                                text="Convert HTML"
                                 icon={MagicIcon}
                                 checked={false}
                                 onChange={() =>
                                   this.onMagicFrameGenerate(
+                                    firstSelectedElement,
+                                    "button",
+                                  )
+                                }
+                              />
+                              <ElementCanvasButtonWithText
+                                title="Open in codesandbox"
+                                text="Codesandbox"
+                                icon={MagicIcon}
+                                checked={false}
+                                onChange={() =>
+                                  this.onMagicFrameSandboxGenerate(
+                                    firstSelectedElement,
+                                    "button",
+                                  )
+                                }
+                              />
+                              <ElementCanvasButtonWithText
+                                title="Convert to react code"
+                                text="Convert React"
+                                icon={MagicIcon}
+                                checked={false}
+                                onChange={() =>
+                                  this.onMagicFrameReactComponentGenerate(
                                     firstSelectedElement,
                                     "button",
                                   )
@@ -1473,51 +1520,107 @@ class App extends React.Component<AppProps, AppState> {
                           isIframeElement(firstSelectedElement) &&
                           firstSelectedElement.customData?.generationData
                             ?.status === "done" && (
-                            <ElementCanvasButtons
-                              element={firstSelectedElement}
-                            >
-                              <ElementCanvasButton
-                                title={t("labels.copySource")}
-                                icon={copyIcon}
-                                checked={false}
-                                onChange={() =>
-                                  this.onIframeSrcCopy(firstSelectedElement)
-                                }
-                              />
-                              <ElementCanvasButton
-                                title="Enter fullscreen"
-                                icon={fullscreenIcon}
-                                checked={false}
-                                onChange={() => {
-                                  const iframe =
-                                    this.getHTMLIFrameElement(
-                                      firstSelectedElement,
-                                    );
-                                  if (iframe) {
-                                    try {
-                                      iframe.requestFullscreen();
-                                      this.setState({
-                                        activeEmbeddable: {
-                                          element: firstSelectedElement,
-                                          state: "active",
-                                        },
-                                        selectedElementIds: {
-                                          [firstSelectedElement.id]: true,
-                                        },
-                                        draggingElement: null,
-                                        selectionElement: null,
-                                      });
-                                    } catch (err: any) {
-                                      console.warn(err);
-                                      this.setState({
-                                        errorMessage:
-                                          "Couldn't enter fullscreen",
-                                      });
-                                    }
+                            <>
+                              <ElementCanvasButtons
+                                element={firstSelectedElement}
+                              >
+                                <ElementCanvasButtonWithText
+                                  title={t("labels.copySource")}
+                                  text="Copy Source"
+                                  icon={copyIcon}
+                                  checked={false}
+                                  onChange={() =>
+                                    this.onIframeSrcCopy(firstSelectedElement)
                                   }
-                                }}
-                              />
-                            </ElementCanvasButtons>
+                                />
+                                {firstSelectedElement.customData.generationData
+                                  .language === "html" && (
+                                  <ElementCanvasButtonWithText
+                                    title="Convert to react code"
+                                    text="Convert React"
+                                    icon={MagicIcon}
+                                    checked={false}
+                                    onChange={() =>
+                                      this.onIframeConvertToReactCode(
+                                        firstSelectedElement,
+                                      )
+                                    }
+                                  />
+                                )}
+                                <ElementCanvasButtonWithText
+                                  title="Toggle chat window"
+                                  text="Toggle Chat"
+                                  icon={chatIcon}
+                                  checked={false}
+                                  onChange={() =>
+                                    this.toggleChatbot(firstSelectedElement)
+                                  }
+                                />
+                                <ElementCanvasButtonWithText
+                                  title="Enter fullscreen"
+                                  text="Fullscreen"
+                                  icon={fullscreenIcon}
+                                  checked={false}
+                                  onChange={() => {
+                                    const iframe =
+                                      this.getHTMLIFrameElement(
+                                        firstSelectedElement,
+                                      );
+                                    if (iframe) {
+                                      try {
+                                        iframe.requestFullscreen();
+                                        this.setState({
+                                          activeEmbeddable: {
+                                            element: firstSelectedElement,
+                                            state: "active",
+                                          },
+                                          selectedElementIds: {
+                                            [firstSelectedElement.id]: true,
+                                          },
+                                          draggingElement: null,
+                                          selectionElement: null,
+                                        });
+                                      } catch (err: any) {
+                                        console.warn(err);
+                                        this.setState({
+                                          errorMessage:
+                                            "Couldn't enter fullscreen",
+                                        });
+                                      }
+                                    }
+                                  }}
+                                />
+                              </ElementCanvasButtons>
+                              {firstSelectedElement.customData.generationData
+                                .toggleChat && (
+                                <ElementCanvasChatbot
+                                  element={firstSelectedElement}
+                                >
+                                  {firstSelectedElement.customData
+                                    .generationData.language === "react" && (
+                                    <Chatbot
+                                      onChatbotSubmit={(message) =>
+                                        this.reactChatbotGenerate(
+                                          message,
+                                          firstSelectedElement,
+                                        )
+                                      }
+                                    />
+                                  )}
+                                  {firstSelectedElement.customData
+                                    .generationData.language === "html" && (
+                                    <Chatbot
+                                      onChatbotSubmit={(message) =>
+                                        this.htmlChatbotGenerate(
+                                          message,
+                                          firstSelectedElement,
+                                        )
+                                      }
+                                    />
+                                  )}
+                                </ElementCanvasChatbot>
+                              )}
+                            </>
                           )}
                         {this.state.toast !== null && (
                           <Toast
@@ -1806,7 +1909,307 @@ class App extends React.Component<AppProps, AppState> {
 
     this.updateMagicGeneration({
       frameElement,
-      data: { status: "done", html },
+      data: { status: "done", html, language: "html", code: html },
+    });
+  }
+
+  private async onMagicFrameSandboxGenerate(
+    magicFrame: ExcalidrawMagicFrameElement,
+    source: "button" | "upstream",
+  ) {
+    if (!this.OPENAI_KEY) {
+      this.setState({
+        openDialog: {
+          name: "settings",
+          tab: "diagram-to-code",
+          source: "generation",
+        },
+      });
+      trackEvent("ai", "generate (missing key)", "d2c");
+      return;
+    }
+
+    const magicFrameChildren = elementsOverlappingBBox({
+      elements: this.scene.getNonDeletedElements(),
+      bounds: magicFrame,
+      type: "overlap",
+    }).filter((el) => !isMagicFrameElement(el));
+
+    if (!magicFrameChildren.length) {
+      if (source === "button") {
+        this.setState({ errorMessage: "Cannot generate from an empty frame" });
+        trackEvent("ai", "generate (no-children)", "d2c");
+      } else {
+        this.setActiveTool({ type: "magicframe" });
+      }
+      return;
+    }
+
+    const frameElement = this.insertIframeElement({
+      sceneX: magicFrame.x + magicFrame.width + 30,
+      sceneY: magicFrame.y,
+      width: magicFrame.width,
+      height: magicFrame.height,
+    });
+
+    if (!frameElement) {
+      return;
+    }
+
+    this.updateMagicGeneration({
+      frameElement,
+      data: { status: "pending" },
+    });
+
+    this.setState({
+      selectedElementIds: { [frameElement.id]: true },
+    });
+
+    const blob = await exportToBlob({
+      elements: this.scene.getNonDeletedElements(),
+      appState: {
+        ...this.state,
+        exportBackground: true,
+        viewBackgroundColor: this.state.viewBackgroundColor,
+      },
+      exportingFrame: magicFrame,
+      files: this.files,
+    });
+
+    const dataURL = await getDataURL(blob);
+
+    const textFromFrameChildren = this.getTextFromElements(magicFrameChildren);
+
+    trackEvent("ai", "generate (start)", "d2c");
+
+    const result = await diagramToHTML({
+      image: dataURL,
+      apiKey: this.OPENAI_KEY,
+      text: textFromFrameChildren,
+      theme: this.state.theme,
+    });
+
+    if (!result.ok) {
+      trackEvent("ai", "generate (failed)", "d2c");
+      console.error(result.error);
+      this.updateMagicGeneration({
+        frameElement,
+        data: {
+          status: "error",
+          code: "ERR_OAI",
+          message: result.error?.message || "Unknown error during generation",
+        },
+      });
+      return;
+    }
+    trackEvent("ai", "generate (success)", "d2c");
+
+    if (result.choices[0].message.content == null) {
+      this.updateMagicGeneration({
+        frameElement,
+        data: {
+          status: "error",
+          code: "ERR_OAI",
+          message: "Nothing genereated :(",
+        },
+      });
+      return;
+    }
+
+    const message = result.choices[0].message.content;
+
+    const html = message.slice(
+      message.indexOf("<!DOCTYPE html>"),
+      message.indexOf("</html>") + "</html>".length,
+    );
+
+    // HTML을 CodeSandbox에 업로드하고, iframe URL을 받아옵니다.
+    const sandboxIframeUrl = await uploadHtmlToCodeSandbox(html);
+    const iframeHtml = `<iframe
+                          src=${sandboxIframeUrl}
+                          style="width:100%; height:100vh; border:0; border-radius: 4px; overflow:hidden;"
+                          allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+                          sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+                        ></iframe>`;
+
+    // iframe 요소에 샌드박스 URL을 설정하여 페이지에 임베드합니다.
+    this.updateMagicGeneration({
+      frameElement,
+      data: { status: "done", html: iframeHtml, language: "html", code: html },
+    });
+  }
+
+  private async onMagicFrameReactComponentGenerate(
+    magicFrame: ExcalidrawMagicFrameElement,
+    source: "button" | "upstream",
+  ) {
+    if (!this.OPENAI_KEY) {
+      this.setState({
+        openDialog: {
+          name: "settings",
+          tab: "diagram-to-code",
+          source: "generation",
+        },
+      });
+      trackEvent("ai", "generate (missing key)", "d2c");
+      return;
+    }
+
+    const magicFrameChildren = elementsOverlappingBBox({
+      elements: this.scene.getNonDeletedElements(),
+      bounds: magicFrame,
+      type: "overlap",
+    }).filter((el) => !isMagicFrameElement(el));
+
+    if (!magicFrameChildren.length) {
+      if (source === "button") {
+        this.setState({ errorMessage: "Cannot generate from an empty frame" });
+        trackEvent("ai", "generate (no-children)", "d2c");
+      } else {
+        this.setActiveTool({ type: "magicframe" });
+      }
+      return;
+    }
+
+    const frameElement = this.insertIframeElement({
+      sceneX: magicFrame.x + magicFrame.width + 30,
+      sceneY: magicFrame.y,
+      width: magicFrame.width,
+      height: magicFrame.height,
+    });
+
+    if (!frameElement) {
+      return;
+    }
+
+    this.updateMagicGeneration({
+      frameElement,
+      data: { status: "pending" },
+    });
+
+    this.setState({
+      selectedElementIds: { [frameElement.id]: true },
+    });
+
+    const blob = await exportToBlob({
+      elements: this.scene.getNonDeletedElements(),
+      appState: {
+        ...this.state,
+        exportBackground: true,
+        viewBackgroundColor: this.state.viewBackgroundColor,
+      },
+      exportingFrame: magicFrame,
+      files: this.files,
+    });
+
+    const dataURL = await getDataURL(blob);
+
+    const textFromFrameChildren = this.getTextFromElements(magicFrameChildren);
+
+    trackEvent("ai", "generate (start)", "d2c");
+
+    const result = await diagramToHTML({
+      image: dataURL,
+      apiKey: this.OPENAI_KEY,
+      text: textFromFrameChildren,
+      theme: this.state.theme,
+    });
+
+    if (!result.ok) {
+      trackEvent("ai", "generate (failed)", "d2c");
+      console.error(result.error);
+      this.updateMagicGeneration({
+        frameElement,
+        data: {
+          status: "error",
+          code: "ERR_OAI",
+          message: result.error?.message || "Unknown error during generation",
+        },
+      });
+      return;
+    }
+    trackEvent("ai", "generate (success)", "d2c");
+
+    if (result.choices[0].message.content == null) {
+      this.updateMagicGeneration({
+        frameElement,
+        data: {
+          status: "error",
+          code: "ERR_OAI",
+          message: "Nothing genereated :(",
+        },
+      });
+      return;
+    }
+
+    const message = result.choices[0].message.content;
+
+    const html = message.slice(
+      message.indexOf("<!DOCTYPE html>"),
+      message.indexOf("</html>") + "</html>".length,
+    );
+
+    trackEvent("ai", "react component generate (start)", "d2c");
+
+    const reactComponent = await htmlToReactComponent({
+      apiKey: this.OPENAI_KEY,
+      text: html,
+    });
+
+    if (!reactComponent.ok) {
+      trackEvent("ai", "react component generate (failed)", "d2c");
+      console.error(reactComponent.error);
+      this.updateMagicGeneration({
+        frameElement,
+        data: {
+          status: "error",
+          code: "ERR_OAI",
+          message:
+            reactComponent.error?.message || "Unknown error during generation",
+        },
+      });
+      return;
+    }
+
+    if (reactComponent.choices[0].message.content == null) {
+      this.updateMagicGeneration({
+        frameElement,
+        data: {
+          status: "error",
+          code: "ERR_OAI",
+          message: "Nothing genereated :(",
+        },
+      });
+      return;
+    }
+
+    const CodesandboxFiles = JSON.parse(
+      reactComponent.choices[0].message.content,
+    );
+
+    const CodesandboxCode = JSON.stringify(CodesandboxFiles);
+
+    // HTML을 CodeSandbox에 업로드하고, iframe URL을 받아옵니다.
+    const sandboxIframeUrl = await uploadReactCodeToCodeSandbox(
+      CodesandboxFiles,
+    );
+
+    const iframeHtml = `<iframe
+                          src=${sandboxIframeUrl}
+                          style="width:100%; height:100vh; border:0; border-radius: 4px; overflow:hidden;"
+                          allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+                          sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+                        ></iframe>`;
+
+    // iframe 요소에 샌드박스 URL을 설정하여 페이지에 임베드합니다.
+    this.updateMagicGeneration({
+      frameElement,
+      data: {
+        status: "done",
+        html: iframeHtml,
+        language: "react",
+        code: CodesandboxCode,
+      },
     });
   }
 
@@ -1817,6 +2220,295 @@ class App extends React.Component<AppProps, AppState> {
         message: "copied to clipboard",
         closable: false,
         duration: 1500,
+      });
+    }
+  }
+
+  private async onIframeConvertToReactCode(element: ExcalidrawIframeElement) {
+    if (!this.OPENAI_KEY) {
+      this.setState({
+        openDialog: {
+          name: "settings",
+          tab: "diagram-to-code",
+          source: "generation",
+        },
+      });
+      trackEvent("ai", "generate (missing key)", "d2c");
+      return;
+    }
+
+    if (element.customData?.generationData?.status === "done") {
+      const html = element.customData.generationData.html;
+
+      const frameElement = this.insertIframeElement({
+        sceneX: element.x + element.width + 30,
+        sceneY: element.y,
+        width: element.width,
+        height: element.height,
+      });
+
+      if (!frameElement) {
+        return;
+      }
+
+      this.updateMagicGeneration({
+        frameElement,
+        data: { status: "pending" },
+      });
+
+      this.setState({
+        selectedElementIds: { [frameElement.id]: true },
+      });
+
+      trackEvent("ai", "react component generate (start)", "d2c");
+
+      const reactComponent = await htmlToReactComponent({
+        apiKey: this.OPENAI_KEY,
+        text: html,
+      });
+
+      if (!reactComponent.ok) {
+        trackEvent("ai", "react component generate (failed)", "d2c");
+        console.error(reactComponent.error);
+        this.updateMagicGeneration({
+          frameElement,
+          data: {
+            status: "error",
+            code: "ERR_OAI",
+            message:
+              reactComponent.error?.message ||
+              "Unknown error during generation",
+          },
+        });
+        return;
+      }
+
+      if (reactComponent.choices[0].message.content == null) {
+        this.updateMagicGeneration({
+          frameElement,
+          data: {
+            status: "error",
+            code: "ERR_OAI",
+            message: "Nothing genereated :(",
+          },
+        });
+        return;
+      }
+
+      const CodesandboxFiles = JSON.parse(
+        reactComponent.choices[0].message.content,
+      );
+
+      const CodesandboxCode = JSON.stringify(CodesandboxFiles);
+
+      // HTML을 CodeSandbox에 업로드하고, iframe URL을 받아옵니다.
+      const sandboxIframeUrl = await uploadReactCodeToCodeSandbox(
+        CodesandboxFiles,
+      );
+
+      const iframeHtml = `<iframe
+                            src=${sandboxIframeUrl}
+                            style="width:100%; height:100vh; border:0; border-radius: 4px; overflow:hidden;"
+                            allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+                            sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+                          ></iframe>`;
+
+      // iframe 요소에 샌드박스 URL을 설정하여 페이지에 임베드합니다.
+      this.updateMagicGeneration({
+        frameElement,
+        data: {
+          status: "done",
+          html: iframeHtml,
+          language: "react",
+          code: CodesandboxCode,
+        },
+      });
+    }
+  }
+
+  private async htmlChatbotGenerate(
+    message: string,
+    element: ExcalidrawIframeElement,
+  ) {
+    if (!this.OPENAI_KEY) {
+      this.setState({
+        openDialog: {
+          name: "settings",
+          tab: "diagram-to-code",
+          source: "generation",
+        },
+      });
+      trackEvent("ai", "generate (missing key)", "d2c");
+      return;
+    }
+
+    if (element.customData?.generationData?.status === "done") {
+      const html = element.customData.generationData.code;
+
+      const frameElement = element;
+
+      if (!frameElement) {
+        return;
+      }
+
+      this.updateMagicGeneration({
+        frameElement,
+        data: { status: "pending" },
+      });
+
+      this.setState({
+        selectedElementIds: { [frameElement.id]: true },
+      });
+
+      trackEvent("ai", "react component generate (start)", "d2c");
+
+      const htmlComponent = await chatToHtmlComponent({
+        apiKey: this.OPENAI_KEY,
+        text: html,
+        message,
+      });
+
+      if (!htmlComponent.ok) {
+        trackEvent("ai", "react component generate (failed)", "d2c");
+        console.error(htmlComponent.error);
+        this.updateMagicGeneration({
+          frameElement,
+          data: {
+            status: "error",
+            code: "ERR_OAI",
+            message:
+              htmlComponent.error?.message || "Unknown error during generation",
+          },
+        });
+        return;
+      }
+
+      if (htmlComponent.choices[0].message.content == null) {
+        this.updateMagicGeneration({
+          frameElement,
+          data: {
+            status: "error",
+            code: "ERR_OAI",
+            message: "Nothing genereated :(",
+          },
+        });
+        return;
+      }
+
+      const messages = htmlComponent.choices[0].message.content;
+
+      const chatHtml = messages.slice(
+        messages.indexOf("<!DOCTYPE html>"),
+        messages.indexOf("</html>") + "</html>".length,
+      );
+
+      this.updateMagicGeneration({
+        frameElement,
+        data: {
+          status: "done",
+          html: chatHtml,
+          language: "html",
+          code: chatHtml,
+        },
+      });
+    }
+  }
+
+  private async reactChatbotGenerate(
+    message: string,
+    element: ExcalidrawIframeElement,
+  ) {
+    if (!this.OPENAI_KEY) {
+      this.setState({
+        openDialog: {
+          name: "settings",
+          tab: "diagram-to-code",
+          source: "generation",
+        },
+      });
+      trackEvent("ai", "generate (missing key)", "d2c");
+      return;
+    }
+
+    if (element.customData?.generationData?.status === "done") {
+      const html = element.customData.generationData.code;
+
+      const frameElement = element;
+
+      if (!frameElement) {
+        return;
+      }
+
+      this.updateMagicGeneration({
+        frameElement,
+        data: { status: "pending" },
+      });
+
+      this.setState({
+        selectedElementIds: { [frameElement.id]: true },
+      });
+
+      trackEvent("ai", "react component generate (start)", "d2c");
+
+      const reactComponent = await chatToReactComponent({
+        apiKey: this.OPENAI_KEY,
+        text: html,
+        message,
+      });
+
+      if (!reactComponent.ok) {
+        trackEvent("ai", "react component generate (failed)", "d2c");
+        console.error(reactComponent.error);
+        this.updateMagicGeneration({
+          frameElement,
+          data: {
+            status: "error",
+            code: "ERR_OAI",
+            message:
+              reactComponent.error?.message ||
+              "Unknown error during generation",
+          },
+        });
+        return;
+      }
+
+      if (reactComponent.choices[0].message.content == null) {
+        this.updateMagicGeneration({
+          frameElement,
+          data: {
+            status: "error",
+            code: "ERR_OAI",
+            message: "Nothing genereated :(",
+          },
+        });
+        return;
+      }
+
+      const CodesandboxFiles = JSON.parse(
+        reactComponent.choices[0].message.content,
+      );
+
+      const chatReact = JSON.stringify(CodesandboxFiles);
+
+      const sandboxIframeUrl = await uploadReactCodeToCodeSandbox(
+        CodesandboxFiles,
+      );
+
+      const iframeHtml = `<iframe
+                            src=${sandboxIframeUrl}
+                            style="width:100%; height:100vh; border:0; border-radius: 4px; overflow:hidden;"
+                            allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+                            sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+                          ></iframe>`;
+
+      this.updateMagicGeneration({
+        frameElement,
+        data: {
+          status: "done",
+          html: iframeHtml,
+          language: "react",
+          code: chatReact,
+        },
       });
     }
   }
