@@ -244,6 +244,8 @@ export { LiveCollaborationTrigger };
 
 export { DefaultSidebar } from "./components/DefaultSidebar";
 export { TTDDialog } from "./components/TTDDialog/TTDDialog";
+export * from "./components/TTDDialog/common";
+
 export { TTDDialogTrigger } from "./components/TTDDialog/TTDDialogTrigger";
 
 export { normalizeLink } from "./data/url";

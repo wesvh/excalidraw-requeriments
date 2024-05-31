@@ -321,60 +321,6 @@ export const ShapesSwitcher = ({
           >
             {t("toolBar.frame")}
           </DropdownMenu.Item>
-          <DropdownMenu.Item
-            onSelect={() => app.setActiveTool({ type: "embeddable" })}
-            icon={EmbedIcon}
-            data-testid="toolbar-embeddable"
-            selected={embeddableToolSelected}
-          >
-            {t("toolBar.embeddable")}
-          </DropdownMenu.Item>
-          <DropdownMenu.Item
-            onSelect={() => app.setActiveTool({ type: "laser" })}
-            icon={laserPointerToolIcon}
-            data-testid="toolbar-laser"
-            selected={laserToolSelected}
-            shortcut={KEYS.K.toLocaleUpperCase()}
-          >
-            {t("toolBar.laser")}
-          </DropdownMenu.Item>
-          <div style={{ margin: "6px 0", fontSize: 14, fontWeight: 600 }}>
-            Generate
-          </div>
-          {app.props.aiEnabled !== false && <TTDDialogTriggerTunnel.Out />}
-          <DropdownMenu.Item
-            onSelect={() => app.setOpenDialog({ name: "ttd", tab: "mermaid" })}
-            icon={mermaidLogoIcon}
-            data-testid="toolbar-embeddable"
-          >
-            {t("toolBar.mermaidToExcalidraw")}
-          </DropdownMenu.Item>
-          {app.props.aiEnabled !== false && (
-            <>
-              <DropdownMenu.Item
-                onSelect={() => app.onMagicframeToolSelect()}
-                icon={MagicIcon}
-                data-testid="toolbar-magicframe"
-              >
-                {t("toolBar.magicframe")}
-                <DropdownMenu.Item.Badge>AI</DropdownMenu.Item.Badge>
-              </DropdownMenu.Item>
-              <DropdownMenu.Item
-                onSelect={() => {
-                  trackEvent("ai", "open-settings", "d2c");
-                  app.setOpenDialog({
-                    name: "settings",
-                    source: "settings",
-                    tab: "diagram-to-code",
-                  });
-                }}
-                icon={OpenAIIcon}
-                data-testid="toolbar-magicSettings"
-              >
-                {t("toolBar.magicSettings")}
-              </DropdownMenu.Item>
-            </>
-          )}
         </DropdownMenu.Content>
       </DropdownMenu>
     </>

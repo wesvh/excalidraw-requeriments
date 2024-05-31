@@ -141,7 +141,6 @@ export const TTDDialogBase = withInternalFallback(
         setOnTextSubmitInProgess(true);
 
         trackEvent("ai", "generate", "ttd");
-
         const { generatedResponse, error, rateLimit, rateLimitRemaining } =
           await rest.onTextSubmit(prompt);
 
@@ -246,24 +245,8 @@ export const TTDDialogBase = withInternalFallback(
               <TTDDialogTabTrigger tab="text-to-diagram">
                 <div style={{ display: "flex", alignItems: "center" }}>
                   {t("labels.textToDiagram")}
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      padding: "1px 6px",
-                      marginLeft: "10px",
-                      fontSize: 10,
-                      borderRadius: "12px",
-                      background: "pink",
-                      color: "#000",
-                    }}
-                  >
-                    AI Beta
-                  </div>
                 </div>
               </TTDDialogTabTrigger>
-              <TTDDialogTabTrigger tab="mermaid">Mermaid</TTDDialogTabTrigger>
             </TTDDialogTabTriggers>
           )}
 
@@ -274,19 +257,6 @@ export const TTDDialogBase = withInternalFallback(
           </TTDDialogTab>
           {!("__fallback" in rest) && (
             <TTDDialogTab className="ttd-dialog-content" tab="text-to-diagram">
-              <div className="ttd-dialog-desc">
-                Currently we use Mermaid as a middle step, so you'll get best
-                results if you describe a diagram, workflow, flow chart, and
-                similar.
-                <p>
-                  현재 Excalidraw-with-AI에서는 이 기능을 준비중입니다.{" "}
-                  <a href="https://excalidraw.com/" target="_blank">
-                    excalidraw.com
-                  </a>
-                  에서 이용하실 수 있습니다.
-                </p>
-              </div>
-
               <TTDDialogPanels>
                 <TTDDialogPanel
                   label={t("labels.prompt")}

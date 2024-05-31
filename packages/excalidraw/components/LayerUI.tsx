@@ -383,7 +383,6 @@ const LayerUI = ({
       {/* render component fallbacks. Can be rendered anywhere as they'll be
           tunneled away. We only render tunneled components that actually
         have defaults when host do not render anything. */}
-      <DefaultMainMenu UIOptions={UIOptions} />
       <DefaultSidebar.Trigger
         __fallback
         icon={LibraryIcon}
@@ -404,8 +403,6 @@ const LayerUI = ({
       <DefaultOverwriteConfirmDialog />
       {appState.openDialog?.name === "ttd" && <TTDDialog __fallback />}
       {/* ------------------------------------------------------------------ */}
-
-      {appState.isLoading && <LoadingMessage delay={250} />}
       {appState.errorMessage && (
         <ErrorDialog onClose={() => setAppState({ errorMessage: null })}>
           {appState.errorMessage}
