@@ -1,6 +1,6 @@
 {
-  "name": "@qvsion/excalidrawbasic",
-  "version": "0.0.1",
+  "name": "excalidrawbasic",
+  "version": "0.0.9",
   "main": "main.js",
   "types": "types/excalidraw/index.d.ts",
   "files": [
@@ -10,7 +10,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "description": "Excalidraw as a React component",
+  "description": "Fork of Excalidraw as a React component",
   "repository": "https://github.com/excalidraw/excalidraw",
   "license": "MIT",
   "keywords": [

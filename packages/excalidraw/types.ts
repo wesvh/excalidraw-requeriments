@@ -645,6 +645,9 @@ type UnsubscribeCallback = () => void;
 
 export type ExcalidrawImperativeAPI = {
   updateScene: InstanceType<typeof App>["updateScene"];
+  addElementsFromPasteOrLibrary: InstanceType<
+    typeof App
+  >["addElementsFromPasteOrLibrary"];
   updateLibrary: InstanceType<typeof Library>["updateLibrary"];
   resetScene: InstanceType<typeof App>["resetScene"];
   getSceneElementsIncludingDeleted: InstanceType<

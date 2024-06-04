@@ -611,6 +611,7 @@ class App extends React.Component<AppProps, AppState> {
     if (excalidrawAPI) {
       const api: ExcalidrawImperativeAPI = {
         updateScene: this.updateScene,
+        addElementsFromPasteOrLibrary: this.addElementsFromPasteOrLibrary,
         updateLibrary: this.library.updateLibrary,
         addFiles: this.addFiles,
         resetScene: this.resetScene,
@@ -3660,7 +3661,7 @@ class App extends React.Component<AppProps, AppState> {
     },
   );
 
-  addElementsFromPasteOrLibrary = (opts: {
+  public addElementsFromPasteOrLibrary = (opts: {
     elements: readonly ExcalidrawElement[];
     files: BinaryFiles | null;
     position: { clientX: number; clientY: number } | "cursor" | "center";

@@ -47,7 +47,7 @@ interface ConvertMermaidToExcalidrawFormatProps {
   mermaidToExcalidrawLib: MermaidToExcalidrawLibProps;
   mermaidDefinition: string;
   setError: (error: Error | null) => void;
-  data: React.MutableRefObject<{
+  data?: React.MutableRefObject<{
     elements: readonly NonDeletedExcalidrawElement[];
     files: BinaryFiles | null;
   }>;
@@ -73,6 +73,15 @@ export const convertMermaidToExcalidraw = async ({
   }
 
   try {
+    const data = {
+      current: {
+        elements: [],
+        files: null,
+      } as {
+        elements: readonly NonDeletedExcalidrawElement[];
+        files: BinaryFiles | null;
+      },
+    };
     const api = await mermaidToExcalidrawLib.api;
 
     let ret;
@@ -108,9 +117,14 @@ export const convertMermaidToExcalidraw = async ({
     });
     // if converting to blob fails, there's some problem that will
     // likely prevent preview and export (e.g. canvas too big)
-    await canvasToBlob(canvas);
+    const blob = await canvasToBlob(canvas);
     parent.style.background = "var(--default-bg-color)";
     canvasNode.replaceChildren(canvas);
+    return {
+      data: data.current,
+      canvas,
+      blob,
+    };
   } catch (err: any) {
     parent.style.background = "var(--default-bg-color)";
     if (mermaidDefinition) {
